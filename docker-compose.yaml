@@ -1,12 +1,12 @@
 services:
 
   mssql:
-    container_name: mssql-db
+    container_name: mssql-db-net
     hostname: mssql-db
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: 'Y'
-      MSSQL_SA_PASSWORD: ${DB_PASSWORD}
+      MSSQL_SA_PASSWORD: 3k%U18QBzPx@
       MSSQL_DATA_DIR: /var/opt/mssql/data
       MSSQL_PID: 'Developer' 
       MSSQL_TCP_PORT: 1433

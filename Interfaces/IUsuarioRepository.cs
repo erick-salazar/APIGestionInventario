@@ -2,7 +2,7 @@
 
 namespace APIGestionInventario.Interfaces
 {
-    public interface IUsuarioRepository
+    public interface IUsuarioRepository : IRepositoyGestionInventarioDB<Usuario>
     {
         Task<Usuario?> Login(string usuarioId, string password);
 

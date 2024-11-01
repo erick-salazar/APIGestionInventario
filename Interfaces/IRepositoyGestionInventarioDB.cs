@@ -8,5 +8,8 @@
         void Update(T entity);
         void Delete(T entity);
         Task SaveChangesAsync();
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
     }
 }

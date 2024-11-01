@@ -25,28 +25,30 @@ namespace APIGestionInventario.Controllers
     {
         private readonly IUsuarioRepository _IUsuarioRepository;
         private readonly IJWTServices _IJWTServices;
+        private readonly IGeneralServices _IGeneralServices;
 
         public AuthController(
             IUsuarioRepository usuarioRepository,
-            IJWTServices jWTServices
+            IJWTServices jWTServices,
+            IGeneralServices generalServices
         )
         {
             _IUsuarioRepository = usuarioRepository;
             _IJWTServices = jWTServices;
+            _IGeneralServices = generalServices;
         }
 
 
-        [HttpPost("login")]
+        [HttpPost]
+        [Route("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-
             if (ModelState.IsValid)
             {
                 Usuario? usuario = await _IUsuarioRepository.Login(request.UsuarioId, request.Password);
 
                 if (usuario != null)
-                {  
-
+                { 
                     var token = _IJWTServices.CrearTokenJWT(usuario);
                     return Ok(new LoginResponseDto
                     {
@@ -61,14 +63,7 @@ namespace APIGestionInventario.Controllers
                 throw new CustomError((int)HttpStatusCode.Unauthorized, "0005", "Usuario o contraseña incorrecta", null);
             }
 
-            var errors = ModelState.Keys
-            .Where(key => ModelState[key].Errors.Count > 0)
-            .Select(key => new ErrorDetail
-            {
-                Field = key,
-                Message = string.Join(", ", ModelState[key].Errors.Select(e => e.ErrorMessage))
-            }).ToList();
-
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);          
         }
@@ -85,10 +80,9 @@ namespace APIGestionInventario.Controllers
                 Usuario? usuario = await _IUsuarioRepository.RefreshToken(nameid);
 
                 if (usuario != null)
-                {   // Generate token
+                {   
                     var token = _IJWTServices.CrearTokenJWT(usuario);
 
-                    // Return the token
                     return Ok(new LoginResponseDto
                     {
                         UsuarioId = usuario.UsuarioId,
@@ -102,8 +96,5 @@ namespace APIGestionInventario.Controllers
 
             throw new CustomError((int)HttpStatusCode.Unauthorized, "0005", "Token expirado", null);
         }
-
-        
-
     }
 }

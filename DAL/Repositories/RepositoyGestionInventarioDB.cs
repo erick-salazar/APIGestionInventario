@@ -1,6 +1,7 @@
 ﻿using APIGestionInventario.Interfaces;
 using APIGestionInventario.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace APIGestionInventario.DAL.Repositories
 {
@@ -8,6 +9,7 @@ namespace APIGestionInventario.DAL.Repositories
     {
         private readonly GestionInventarioContext _context;
         private readonly DbSet<T> _dbSet;
+        private IDbContextTransaction _transaction;
 
         public RepositoyGestionInventarioDB(GestionInventarioContext context)
         {
@@ -43,6 +45,22 @@ namespace APIGestionInventario.DAL.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task BeginTransactionAsync()
+        {
+            _transaction = await _context.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            await _context.SaveChangesAsync();
+            await _transaction.CommitAsync();
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            await _transaction.RollbackAsync();
         }
     }
 }

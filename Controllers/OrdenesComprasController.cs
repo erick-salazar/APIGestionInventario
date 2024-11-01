@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APIGestionInventario.Models;
 using System.Net;
 using APIGestionInventario.DTOs.Request;
 using Microsoft.AspNetCore.Authorization;
 using APIGestionInventario.Interfaces;
+using APIGestionInventario.DTOs.Custom;
 using APIGestionInventario.DAL.Repositories;
+using APIGestionInventario.DTOs.Response;
+using APIGestionInventario.Middleware;
+using System.Diagnostics;
 
 namespace APIGestionInventario.Controllers
 {
@@ -19,124 +18,179 @@ namespace APIGestionInventario.Controllers
     [Authorize(Roles = "Administrador,Empleado")]
     public class OrdenesComprasController : ControllerBase
     {
-        private readonly IRepositoyGestionInventarioDB<OrdenesCompra> _IRepositoyOrdenesCompra;
-        private readonly IRepositoyGestionInventarioDB<Producto> _IRepositoyProducto;
+        private readonly IOrdenCompraRepository _IOrdenCompraRepository;
+        private readonly IJWTServices _IJWTServices;
+        private readonly IGeneralServices _IGeneralServices;
 
         public OrdenesComprasController(
-            IRepositoyGestionInventarioDB<OrdenesCompra> repositoyOrdenesCompra,
-            IRepositoyGestionInventarioDB<Producto> iRepositoyProducto)
+            IOrdenCompraRepository ordenCompraRepository,
+            IJWTServices jWTServices,
+            IGeneralServices generalServices
+        )
         {
-            _IRepositoyOrdenesCompra = repositoyOrdenesCompra;
-            _IRepositoyProducto = iRepositoyProducto;
+            _IOrdenCompraRepository = ordenCompraRepository;
+            _IJWTServices = jWTServices;
+            _IGeneralServices = generalServices;
         }
 
         // GET: api/OrdenesCompras
-        [HttpGet] 
-        public async Task<ActionResult<IEnumerable<OrdenesCompra>>> GetOrdenesCompras()
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<OrdenCompra>>> GetOrdenesCompras([FromQuery] GetAllParameter getURLParametros)
         {
-            return Ok(await _IRepositoyOrdenesCompra.GetAllAsync());
+            if (ModelState.IsValid)
+            {
+                GetAllResult<OrdenCompra> ordenesCompra = await _IOrdenCompraRepository.ObtenerOrdenesCompra(getURLParametros);
+
+                ResponseGenericAPI<GetAllResult<OrdenCompra>> responseGenericAPI = new()
+                {
+                    Code = "0000",
+                    Message = "Success",
+                    TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Data = ordenesCompra
+                };
+
+                return Ok(responseGenericAPI);
+            }
+
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         // GET: api/OrdenesCompras/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<OrdenesCompra>> GetOrdenesCompra(int id)
+        public async Task<ActionResult<OrdenCompra>> GetOrdenesCompra(int id)
         {
-            var ordenesCompra = await _IRepositoyOrdenesCompra.GetByIdAsync(id);
+            var ordenCompra = await _IOrdenCompraRepository.GetByIdAsync(id);
 
-            if (ordenesCompra == null)
+            if (ordenCompra == null)
             {
-                return NotFound();
+                throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
             }
 
-            return ordenesCompra;
+            ResponseGenericAPI<OrdenCompra> responseGenericAPI = new()
+            {
+                Code = "0000",
+                Message = "Success",
+                TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                Data = ordenCompra
+            };
+
+            return Ok(responseGenericAPI);
         }
 
         // PUT: api/OrdenesCompras/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrdenesCompra(int id, OrdenesCompra ordenesCompra)
+        public async Task<IActionResult> PutOrdenesCompra(int id, OrdenCompraActualizarRequestDto ordenCompraActualizarRequestDto)
         {
-            if (id != ordenesCompra.OrdenCompraId)
+            if (ModelState.IsValid)
             {
-                return BadRequest();
-            }
-
-            _IRepositoyOrdenesCompra.Update(ordenesCompra);
-
-            try
-            {
-                await _IRepositoyOrdenesCompra.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await OrdenesCompraExists(id))
+                ResponseGenericAPI<OrdenCompra> responseGenericAPI;
+                OrdenCompra? ordenCompra = await _IOrdenCompraRepository.GetByOrdenProductoIdAsync(ordenCompraActualizarRequestDto.OrdenCompraId, ordenCompraActualizarRequestDto.ProductoId);
+                if ((id != ordenCompraActualizarRequestDto.OrdenCompraId) || ordenCompra == null)
                 {
-                    return NotFound();
+                    throw new CustomError((int)HttpStatusCode.BadRequest, "0006", "OrdenCompraId y productoId requerido no es valido", null);
                 }
-                else
+
+                string? UsuarioId = _IJWTServices.ObtenerClaimJWT(Request, "nameid");
+                
+                try
                 {
-                    throw;
+                    ordenCompra = await _IOrdenCompraRepository.ActualizarOrdenCompra(ordenCompraActualizarRequestDto, UsuarioId);
                 }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!await OrdenesCompraExists(id))
+                    {
+                        string message = "Datos no encontrados en sistema";
+                        responseGenericAPI = new()
+                        {
+                            Code = "0007",
+                            Message = message,
+                            TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                            Data = null,
+                            Error =
+                            [ new() {
+                            Field = "General",
+                            Message = message
+                        }]
+                        };
+
+                        return StatusCode((int)HttpStatusCode.NotFound, responseGenericAPI);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
+                responseGenericAPI = new()
+                {
+                    Code = "0000",
+                    Message = "Success",
+                    TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Data = ordenCompra
+                };
+
+                return Ok(responseGenericAPI);
             }
 
-            return NoContent();
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         // POST: api/OrdenesCompras
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<OrdenesCompra>> PostOrdenesCompra(CrearOrdenCompraRequestDto crearOrdenCompraDto)
+        public async Task<ActionResult<OrdenCompra>> PostOrdenesCompra(OrdenCompraCrearRequestDto ordenCompraCrearDto)
         {
-
-            Producto? producto = await _IRepositoyProducto.GetByIdAsync(crearOrdenCompraDto.ProductoId);
-
-            if (producto != null)
+            if (ModelState.IsValid)
             {
-                OrdenesCompra crearOrdenCompra = new()
+                string? UsuarioId = _IJWTServices.ObtenerClaimJWT(Request, "nameid");
+
+                OrdenCompra ordenCompra = await _IOrdenCompraRepository.CrearOrdenCompra(ordenCompraCrearDto, UsuarioId);
+
+                ResponseGenericAPI<OrdenCompra> responseGenericAPI = new()
                 {
-                    ProductoId = crearOrdenCompraDto.ProductoId,
-                    ProductoCantidad = crearOrdenCompraDto.ProductoCantidad,
-                    ProductoPrecio = producto.ProductoPrecio,
-                    CreadoPor = "Test"
+                    Code = "0000",
+                    Message = "Success",
+                    TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Data = ordenCompra
                 };
 
-                //using var transaction = _IRepositoyOrdenesCompra.Database.BeginTransaction();
-
-                producto.ProductoCantidad -= crearOrdenCompra.ProductoCantidad;
-                _IRepositoyProducto.Update(producto);
-                await _IRepositoyProducto.SaveChangesAsync();
-
-                await _IRepositoyOrdenesCompra.AddAsync(crearOrdenCompra);
-                await _IRepositoyOrdenesCompra.SaveChangesAsync();
-
-                return CreatedAtAction("GetOrdenesCompra", new { id = crearOrdenCompra.OrdenCompraId }, crearOrdenCompra);
-
+                return StatusCode((int)HttpStatusCode.Created, responseGenericAPI);
             }
-            return StatusCode((int)HttpStatusCode.NotFound);
+
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         /*
-            // DELETE: api/OrdenesCompras/5
-            [HttpDelete("{id}")]
-            public async Task<IActionResult> DeleteOrdenesCompra(int id)
+        // DELETE: api/OrdenesCompras/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrdenesCompra(int id)
+        {
+            var ordenesCompra = await _IRepositoyOrdenesCompra.OrdenesCompras.FindAsync(id);
+            if (ordenesCompra == null)
             {
-                var ordenesCompra = await _IRepositoyOrdenesCompra.OrdenesCompras.FindAsync(id);
-                if (ordenesCompra == null)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                _IRepositoyOrdenesCompra.OrdenesCompras.Remove(ordenesCompra);
-                await _IRepositoyOrdenesCompra.SaveChangesAsync();
+            _IRepositoyOrdenesCompra.OrdenesCompras.Remove(ordenesCompra);
+            await _IRepositoyOrdenesCompra.SaveChangesAsync();
 
-                return NoContent();
-            }          
-            */
+            return NoContent();
+        }
+        */
 
         private async Task<bool> OrdenesCompraExists(int id)
         {
-            return (await _IRepositoyOrdenesCompra.GetByIdAsync(id) != null);
+            return (await _IOrdenCompraRepository.GetByIdAsync(id) != null);
         }
+        
     }
 }
-            
+

@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APIGestionInventario.Models;
 using Microsoft.AspNetCore.Authorization;
 using APIGestionInventario.Interfaces;
+using APIGestionInventario.DTOs.Custom;
+using APIGestionInventario.DTOs.Response;
+using System.Diagnostics;
+using APIGestionInventario.DTOs.Request;
+using APIGestionInventario.Middleware;
+using System.Net;
 
 namespace APIGestionInventario.Controllers
 {
@@ -15,19 +16,45 @@ namespace APIGestionInventario.Controllers
     [ApiController]
     public class ProductosController : ControllerBase
     {
-        private readonly IRepositoyGestionInventarioDB<Producto> _IRepositoyProducto;
 
-        public ProductosController(IRepositoyGestionInventarioDB<Producto> iRepositoyProducto)
+        private readonly IProductoRepository _IProductoRepository;
+        private readonly IJWTServices _IJWTServices;
+        private readonly IGeneralServices _IGeneralServices;
+
+        public ProductosController(
+            IProductoRepository productoRepository,
+            IJWTServices jWTServices,
+            IGeneralServices generalServices
+        )
         {
-            _IRepositoyProducto = iRepositoyProducto;
+            _IProductoRepository = productoRepository;
+            _IJWTServices = jWTServices;
+            _IGeneralServices = generalServices;
         }
-        
+
         // GET: api/Productos
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
-        public async Task<ActionResult<IEnumerable<Producto>>> GetProductos()
+        public async Task<IActionResult> GetProductos([FromQuery] GetAllParameter getURLParametros)
         {
-            return Ok(await _IRepositoyProducto.GetAllAsync());
+            if (ModelState.IsValid)
+            {
+                GetAllResult<Producto> productos = await _IProductoRepository.ObtenerProductos(getURLParametros);
+
+                ResponseGenericAPI<GetAllResult<Producto>> responseGenericAPI = new()
+                {
+                    Code = "0000",
+                    Message = "Success",
+                    TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Data = productos
+                };
+
+                return Ok(responseGenericAPI);
+            }
+
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         // GET: api/Productos/5
@@ -35,58 +62,139 @@ namespace APIGestionInventario.Controllers
         [Authorize(Roles = "Administrador,Empleado")]
         public async Task<ActionResult<Producto>> GetProducto(int id)
         {
-            var producto = await _IRepositoyProducto.GetByIdAsync(id);
+            var producto = await _IProductoRepository.GetByIdAsync(id);
 
             if (producto == null)
             {
-                return NotFound();
+                throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
             }
 
-            return producto;
+            ResponseGenericAPI<Producto> responseGenericAPI = new()
+            {
+                Code = "0000",
+                Message = "Success",
+                TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                Data = producto
+            };
+
+            return Ok(responseGenericAPI);
         }
-        
+
         // PUT: api/Productos/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrador")]
-        public async Task<IActionResult> PutProducto(int id, Producto producto)
+        public async Task<IActionResult> PutProducto(int id, ProductoActualizarRequestDto productoActualizarRequestDto)
         {
-            if (id != producto.ProductoId)
+            if (ModelState.IsValid)
             {
-                return BadRequest();
-            }
-
-            _IRepositoyProducto.Update(producto);
-
-            try
-            {
-                await _IRepositoyProducto.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (! await ProductoExists(id))
+                ResponseGenericAPI<Producto> responseGenericAPI;
+                Producto? producto = await _IProductoRepository.GetByIdAsync(productoActualizarRequestDto.ProductoId);
+                if ((id != productoActualizarRequestDto.ProductoId) || producto == null)
                 {
-                    return NotFound();
+                    throw new CustomError((int)HttpStatusCode.BadRequest, "0006", "ProductoId requerido no es valido", null);
                 }
-                else
+
+                string? UsuarioId = _IJWTServices.ObtenerClaimJWT(Request, "nameid");
+
+                producto.ProductoNombre = productoActualizarRequestDto.ProductoNombre;
+                producto.ProductoDescripcion = productoActualizarRequestDto.ProductoDescripcion ?? producto.ProductoDescripcion;
+                producto.ProductoPrecio = productoActualizarRequestDto.ProductoPrecio ?? producto.ProductoPrecio;
+                producto.ProductoCantidad = productoActualizarRequestDto.ProductoCantidad ?? producto.ProductoCantidad;
+                producto.ProductoCantidadMinima = productoActualizarRequestDto.ProductoCantidadMinima ?? producto.ProductoCantidadMinima;
+                producto.ProveedorId = productoActualizarRequestDto.ProveedoId ?? producto.ProveedorId;
+                producto.Estado = productoActualizarRequestDto.Estado ?? producto.Estado;
+                producto.ActualizadoPor = UsuarioId;
+                producto.FechaActulizado = DateTime.Now;
+
+                _IProductoRepository.Update(producto);
+
+                try
                 {
-                    throw;
+                    await _IProductoRepository.SaveChangesAsync();
                 }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!await ProductoExists(id))
+                    {
+                        string message = "Datos no encontrados en sistema";
+                        responseGenericAPI = new()
+                        {
+                            Code = "0007",
+                            Message = message,
+                            TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                            Data = null,
+                            Error =
+                            [ new() {
+                            Field = "General",
+                            Message = message
+                        }]
+                        };
+
+                        return StatusCode((int)HttpStatusCode.NotFound, responseGenericAPI);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
+                responseGenericAPI = new()
+                {
+                    Code = "0000",
+                    Message = "Success",
+                    TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Data = producto
+                };
+
+                return Ok(responseGenericAPI);
             }
 
-            return NoContent();
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         // POST: api/Productos
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         [Authorize(Roles = "Administrador")]
-        public async Task<ActionResult<Producto>> PostProducto(Producto producto)
+        public async Task<ActionResult<Producto>> PostProducto(ProductoCrearRequestDto productoCrearRequestDto)
         {
-            await _IRepositoyProducto.AddAsync(producto);
-            await _IRepositoyProducto.SaveChangesAsync();
+            if (ModelState.IsValid)
+            {
+                string? UsuarioId = _IJWTServices.ObtenerClaimJWT(Request, "nameid");
 
-            return CreatedAtAction("GetProducto", new { id = producto.ProductoId }, producto);
+                Producto producto = new()
+                {
+                    ProductoNombre = productoCrearRequestDto.ProductoNombre,
+                    ProductoDescripcion = productoCrearRequestDto.ProductoDescripcion,
+                    ProductoPrecio = productoCrearRequestDto.ProductoPrecio,
+                    ProductoCantidad = productoCrearRequestDto.ProductoCantidad,
+                    ProductoCantidadMinima = productoCrearRequestDto.ProductoCantidadMinima,
+                    ProveedorId = productoCrearRequestDto.ProveedoId,
+                    Estado = productoCrearRequestDto.Estado ?? true,
+                    CreadoPor = UsuarioId
+                };
+
+                await _IProductoRepository.AddAsync(producto);
+                await _IProductoRepository.SaveChangesAsync();
+
+
+                ResponseGenericAPI<Producto> responseGenericAPI = new()
+                {
+                    Code = "0000",
+                    Message = "Success",
+                    TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Data = producto
+                };
+
+                return StatusCode((int)HttpStatusCode.Created, responseGenericAPI);
+            }
+
+            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         // DELETE: api/Productos/5
@@ -94,21 +202,30 @@ namespace APIGestionInventario.Controllers
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteProducto(int id)
         {
-            var producto = await _IRepositoyProducto.GetByIdAsync(id);
+            var producto = await _IProductoRepository.GetByIdAsync(id);
             if (producto == null)
             {
-                return NotFound();
+                throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
             }
 
-            _IRepositoyProducto.Delete(producto);
-            await _IRepositoyProducto.SaveChangesAsync();
+            _IProductoRepository.Delete(producto);
+            await _IProductoRepository.SaveChangesAsync();
 
-            return NoContent();
+            ResponseGenericAPI<Producto> responseGenericAPI = new()
+            {
+                Code = "0000",
+                Message = "Success",
+                TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            };
+
+            return Ok(responseGenericAPI);
         }
 
         private async Task<bool> ProductoExists(int id)
         {
-            return (await _IRepositoyProducto.GetByIdAsync(id) !=null);
+            return (await _IProductoRepository.GetByIdAsync(id) != null);
         }
     }
+
+
 }

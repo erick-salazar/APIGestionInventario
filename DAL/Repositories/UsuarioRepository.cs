@@ -7,7 +7,7 @@ using static Azure.Core.HttpHeader;
 
 namespace APIGestionInventario.DAL.Repositories
 {
-    public class UsuarioRepository : RepositoyGestionInventarioDB<OrdenesCompra>, IUsuarioRepository
+    public class UsuarioRepository : RepositoyGestionInventarioDB<Usuario>, IUsuarioRepository
     {
         private readonly GestionInventarioContext _GestionInventarioContext;
         public UsuarioRepository(

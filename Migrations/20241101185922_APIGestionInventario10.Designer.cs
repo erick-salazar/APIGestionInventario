@@ -4,6 +4,7 @@ using APIGestionInventario.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APIGestionInventario.Migrations
 {
     [DbContext(typeof(GestionInventarioContext))]
-    partial class GestionInventarioContextModelSnapshot : ModelSnapshot
+    [Migration("20241101185922_APIGestionInventario10")]
+    partial class APIGestionInventario10
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -77,20 +80,14 @@ namespace APIGestionInventario.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("Estado")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("FechaActulizado")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaCreado")
                         .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaRealizado")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("OrdenCompraId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrdenReposiconEstadoId")
-                        .HasColumnType("int");
 
                     b.Property<int>("ProductoCantidad")
                         .HasColumnType("int");
@@ -103,74 +100,11 @@ namespace APIGestionInventario.Migrations
 
                     b.HasKey("OrdenReposicionId");
 
-                    b.HasIndex("OrdenCompraId");
-
-                    b.HasIndex("OrdenReposiconEstadoId");
-
                     b.HasIndex("ProductoId");
 
                     b.HasIndex("ProveedorId");
 
                     b.ToTable("OrdenesReposiciones");
-                });
-
-            modelBuilder.Entity("APIGestionInventario.Models.OrdenReposionEstado", b =>
-                {
-                    b.Property<int>("OrdenReposicionEstadoId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrdenReposicionEstadoId"));
-
-                    b.Property<string>("ActualizadoPor")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CreadoPor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Estado")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("EstadoNombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("FechaActulizado")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaCreado")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("OrdenReposicionEstadoId");
-
-                    b.ToTable("OrdenReposionEstado");
-
-                    b.HasData(
-                        new
-                        {
-                            OrdenReposicionEstadoId = 1,
-                            CreadoPor = "admin01",
-                            Estado = true,
-                            EstadoNombre = "Pendiente",
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7613)
-                        },
-                        new
-                        {
-                            OrdenReposicionEstadoId = 3,
-                            CreadoPor = "admin01",
-                            Estado = true,
-                            EstadoNombre = "Cancelado",
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7618)
-                        },
-                        new
-                        {
-                            OrdenReposicionEstadoId = 2,
-                            CreadoPor = "admin01",
-                            Estado = true,
-                            EstadoNombre = "Realizado",
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7620)
-                        });
                 });
 
             modelBuilder.Entity("APIGestionInventario.Models.Producto", b =>
@@ -229,7 +163,7 @@ namespace APIGestionInventario.Migrations
                             ProductoId = 1,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7543),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7972),
                             ProductoCantidad = 10,
                             ProductoCantidadMinima = 2,
                             ProductoDescripcion = "I7 Dell",
@@ -242,7 +176,7 @@ namespace APIGestionInventario.Migrations
                             ProductoId = 2,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7552),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7978),
                             ProductoCantidad = 10,
                             ProductoCantidadMinima = 2,
                             ProductoDescripcion = "I7 Lenovo",
@@ -290,7 +224,7 @@ namespace APIGestionInventario.Migrations
                             ProveedorId = 1,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7479),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7934),
                             ProveedorNombre = "Dell"
                         },
                         new
@@ -298,7 +232,7 @@ namespace APIGestionInventario.Migrations
                             ProveedorId = 2,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7492),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7940),
                             ProveedorNombre = "Lenovo"
                         });
                 });
@@ -341,7 +275,7 @@ namespace APIGestionInventario.Migrations
                             RolId = 1,
                             CreadoPor = "admin01",
                             Estado = false,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7037),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7552),
                             RolNombre = "Administrador"
                         },
                         new
@@ -349,7 +283,7 @@ namespace APIGestionInventario.Migrations
                             RolId = 2,
                             CreadoPor = "admin01",
                             Estado = false,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7057),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7570),
                             RolNombre = "Empleado"
                         });
                 });
@@ -402,7 +336,7 @@ namespace APIGestionInventario.Migrations
                             UsuarioId = "admin01",
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7424),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7897),
                             Password = "@1234Abc",
                             RolId = 1,
                             UsuarioApellido = "System",
@@ -413,7 +347,7 @@ namespace APIGestionInventario.Migrations
                             UsuarioId = "empleado01",
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7429),
+                            FechaCreado = new DateTime(2024, 11, 1, 12, 59, 20, 421, DateTimeKind.Local).AddTicks(7901),
                             Password = "123Abc+",
                             RolId = 2,
                             UsuarioApellido = "Perez",
@@ -433,33 +367,17 @@ namespace APIGestionInventario.Migrations
 
             modelBuilder.Entity("APIGestionInventario.Models.OrdenReposicion", b =>
                 {
-                    b.HasOne("APIGestionInventario.Models.OrdenCompra", "OrdenesCompras")
-                        .WithMany("OrdenesReposiciones")
-                        .HasForeignKey("OrdenCompraId")
-                        .IsRequired();
-
-                    b.HasOne("APIGestionInventario.Models.OrdenReposionEstado", "OrdenReposiconEstados")
-                        .WithMany("OrdenesReposiciones")
-                        .HasForeignKey("OrdenReposiconEstadoId")
-                        .IsRequired();
-
-                    b.HasOne("APIGestionInventario.Models.Producto", "Productos")
+                    b.HasOne("APIGestionInventario.Models.Producto", null)
                         .WithMany("OrdenesReposiciones")
                         .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("APIGestionInventario.Models.Proveedor", "Proveedores")
+                    b.HasOne("APIGestionInventario.Models.Proveedor", null)
                         .WithMany("OrdenesReposiciones")
                         .HasForeignKey("ProveedorId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("OrdenReposiconEstados");
-
-                    b.Navigation("OrdenesCompras");
-
-                    b.Navigation("Productos");
-
-                    b.Navigation("Proveedores");
                 });
 
             modelBuilder.Entity("APIGestionInventario.Models.Producto", b =>
@@ -480,16 +398,6 @@ namespace APIGestionInventario.Migrations
                         .IsRequired();
 
                     b.Navigation("Roles");
-                });
-
-            modelBuilder.Entity("APIGestionInventario.Models.OrdenCompra", b =>
-                {
-                    b.Navigation("OrdenesReposiciones");
-                });
-
-            modelBuilder.Entity("APIGestionInventario.Models.OrdenReposionEstado", b =>
-                {
-                    b.Navigation("OrdenesReposiciones");
                 });
 
             modelBuilder.Entity("APIGestionInventario.Models.Producto", b =>

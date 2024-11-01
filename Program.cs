@@ -1,3 +1,4 @@
+using APIGestionInventario.BAL;
 using APIGestionInventario.BAL.JWT;
 using APIGestionInventario.DAL.Repositories;
 using APIGestionInventario.Interfaces;
@@ -55,10 +56,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 
 builder.Services.AddSingleton<IJWTServices, JWTServices>();
+builder.Services.AddSingleton<IGeneralServices, GeneralServices>();
 
 builder.Services.AddScoped(typeof(IRepositoyGestionInventarioDB<>), typeof(RepositoyGestionInventarioDB<>));
 builder.Services.AddScoped(typeof(IUsuarioRepository), typeof(UsuarioRepository));
-
+builder.Services.AddScoped(typeof(IProductoRepository), typeof(ProductoRepository));
 
 var app = builder.Build();
 

@@ -27,7 +27,7 @@ namespace APIGestionInventario.BAL.JWT
                     new(ClaimTypes.NameIdentifier, usuario.UsuarioId),
                     new(ClaimTypes.Role, usuario.Roles.RolNombre),
                 ]),
-                Expires = DateTime.UtcNow.AddHours(1),
+                Expires = DateTime.UtcNow.AddHours(12),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _IConfiguration["Jwt:Issuer"],
                 Audience = _IConfiguration["Jwt:Audience"]

@@ -4,6 +4,7 @@ using APIGestionInventario.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APIGestionInventario.Migrations
 {
     [DbContext(typeof(GestionInventarioContext))]
-    partial class GestionInventarioContextModelSnapshot : ModelSnapshot
+    [Migration("20241101222659_APIGestionInventario12")]
+    partial class APIGestionInventario12
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,9 +86,6 @@ namespace APIGestionInventario.Migrations
                     b.Property<DateTime>("FechaCreado")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("FechaRealizado")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("OrdenCompraId")
                         .HasColumnType("int");
 
@@ -153,23 +153,23 @@ namespace APIGestionInventario.Migrations
                             CreadoPor = "admin01",
                             Estado = true,
                             EstadoNombre = "Pendiente",
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7613)
-                        },
-                        new
-                        {
-                            OrdenReposicionEstadoId = 3,
-                            CreadoPor = "admin01",
-                            Estado = true,
-                            EstadoNombre = "Cancelado",
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7618)
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8255)
                         },
                         new
                         {
                             OrdenReposicionEstadoId = 2,
                             CreadoPor = "admin01",
                             Estado = true,
+                            EstadoNombre = "Cancelado",
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8259)
+                        },
+                        new
+                        {
+                            OrdenReposicionEstadoId = 3,
+                            CreadoPor = "admin01",
+                            Estado = true,
                             EstadoNombre = "Realizado",
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7620)
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8262)
                         });
                 });
 
@@ -229,7 +229,7 @@ namespace APIGestionInventario.Migrations
                             ProductoId = 1,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7543),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8176),
                             ProductoCantidad = 10,
                             ProductoCantidadMinima = 2,
                             ProductoDescripcion = "I7 Dell",
@@ -242,7 +242,7 @@ namespace APIGestionInventario.Migrations
                             ProductoId = 2,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7552),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8185),
                             ProductoCantidad = 10,
                             ProductoCantidadMinima = 2,
                             ProductoDescripcion = "I7 Lenovo",
@@ -290,7 +290,7 @@ namespace APIGestionInventario.Migrations
                             ProveedorId = 1,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7479),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8107),
                             ProveedorNombre = "Dell"
                         },
                         new
@@ -298,7 +298,7 @@ namespace APIGestionInventario.Migrations
                             ProveedorId = 2,
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7492),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8117),
                             ProveedorNombre = "Lenovo"
                         });
                 });
@@ -341,7 +341,7 @@ namespace APIGestionInventario.Migrations
                             RolId = 1,
                             CreadoPor = "admin01",
                             Estado = false,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7037),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(7551),
                             RolNombre = "Administrador"
                         },
                         new
@@ -349,7 +349,7 @@ namespace APIGestionInventario.Migrations
                             RolId = 2,
                             CreadoPor = "admin01",
                             Estado = false,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7057),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(7571),
                             RolNombre = "Empleado"
                         });
                 });
@@ -402,7 +402,7 @@ namespace APIGestionInventario.Migrations
                             UsuarioId = "admin01",
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7424),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8031),
                             Password = "@1234Abc",
                             RolId = 1,
                             UsuarioApellido = "System",
@@ -413,7 +413,7 @@ namespace APIGestionInventario.Migrations
                             UsuarioId = "empleado01",
                             CreadoPor = "admin01",
                             Estado = true,
-                            FechaCreado = new DateTime(2024, 11, 1, 16, 28, 18, 127, DateTimeKind.Local).AddTicks(7429),
+                            FechaCreado = new DateTime(2024, 11, 1, 16, 26, 56, 702, DateTimeKind.Local).AddTicks(8037),
                             Password = "123Abc+",
                             RolId = 2,
                             UsuarioApellido = "Perez",

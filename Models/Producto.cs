@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace APIGestionInventario.Models
 {
@@ -11,12 +12,19 @@ namespace APIGestionInventario.Models
         public decimal ProductoPrecio { get; set; }
         public int ProductoCantidad { get; set; }
         public int ProductoCantidadMinima { get; set; }
-        public bool Estado { get; set; }
+        public bool Estado { get; set; } = true;
         public DateTime FechaCreado { get; set; } = DateTime.Now;
         public string CreadoPor { get; set; } = null!;
         public DateTime? FechaActulizado { get; set; }
         public string? ActualizadoPor {get; set;}
+        public int ProveedorId { get; set; }
 
-        public virtual ICollection<OrdenesCompra> OrdenesCompras { get; set; } = [];
+        [JsonIgnore]
+        public virtual ICollection<OrdenCompra> OrdenesCompras { get; set; } = [];
+
+        [JsonIgnore]
+        public virtual ICollection<OrdenReposicion> OrdenesReposiciones { get; set; } = [];
+
+        public virtual Proveedor Proveedores { get; set; } = null!;
     }
 }

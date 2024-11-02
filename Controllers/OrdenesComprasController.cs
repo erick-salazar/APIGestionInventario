@@ -6,10 +6,10 @@ using APIGestionInventario.DTOs.Request;
 using Microsoft.AspNetCore.Authorization;
 using APIGestionInventario.Interfaces;
 using APIGestionInventario.DTOs.Custom;
-using APIGestionInventario.DAL.Repositories;
 using APIGestionInventario.DTOs.Response;
 using APIGestionInventario.Middleware;
 using System.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace APIGestionInventario.Controllers
 {
@@ -21,16 +21,21 @@ namespace APIGestionInventario.Controllers
         private readonly IOrdenCompraRepository _IOrdenCompraRepository;
         private readonly IJWTServices _IJWTServices;
         private readonly IGeneralServices _IGeneralServices;
+        private readonly IMemoryCache _IMemoryCache;
+        private readonly MemoryCacheEntryOptions _MemoryCacheEntryOptions;
 
         public OrdenesComprasController(
             IOrdenCompraRepository ordenCompraRepository,
             IJWTServices jWTServices,
-            IGeneralServices generalServices
+            IGeneralServices generalServices,
+            IMemoryCache memoryCache
         )
         {
             _IOrdenCompraRepository = ordenCompraRepository;
             _IJWTServices = jWTServices;
             _IGeneralServices = generalServices;
+            _IMemoryCache = memoryCache;
+            _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
         // GET: api/OrdenesCompras
@@ -39,7 +44,15 @@ namespace APIGestionInventario.Controllers
         {
             if (ModelState.IsValid)
             {
-                GetAllResult<OrdenCompra> ordenesCompra = await _IOrdenCompraRepository.ObtenerOrdenesCompra(getURLParametros);
+                string limite = getURLParametros.Limite != null ? getURLParametros.Limite.Value.ToString() : "";
+                string salto = getURLParametros.Salto != null ? getURLParametros.Salto.Value.ToString() : "";
+                var cacheKey = $"GetReport?limite={limite}&salto={salto}";
+
+                if (!_IMemoryCache.TryGetValue(cacheKey, out GetAllResult<OrdenCompra>? ordenesCompra))
+                {
+                    ordenesCompra =  await _IOrdenCompraRepository.ObtenerOrdenesCompra(getURLParametros);
+                    _IMemoryCache.Set(cacheKey, ordenesCompra, _MemoryCacheEntryOptions);
+                }                  
 
                 ResponseGenericAPI<GetAllResult<OrdenCompra>> responseGenericAPI = new()
                 {
@@ -52,7 +65,7 @@ namespace APIGestionInventario.Controllers
                 return Ok(responseGenericAPI);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
@@ -61,13 +74,15 @@ namespace APIGestionInventario.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<OrdenCompra>> GetOrdenesCompra(int id)
         {
-            var ordenCompra = await _IOrdenCompraRepository.GetByIdAsync(id);
+            var cacheKey = $"GetOrdenesCompra/{id}";
 
-            if (ordenCompra == null)
+            if (!_IMemoryCache.TryGetValue(cacheKey, out OrdenCompra? ordenCompra))
             {
-                throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
+                ordenCompra = await _IOrdenCompraRepository.GetByIdAsync(id);
+                _IMemoryCache.Set(cacheKey, ordenCompra, _MemoryCacheEntryOptions);
             }
 
+            ordenCompra = ordenCompra ?? throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
             ResponseGenericAPI<OrdenCompra> responseGenericAPI = new()
             {
                 Code = "0000",
@@ -97,7 +112,7 @@ namespace APIGestionInventario.Controllers
                 
                 try
                 {
-                    ordenCompra = await _IOrdenCompraRepository.ActualizarOrdenCompra(ordenCompraActualizarRequestDto, UsuarioId);
+                    ordenCompra = await _IOrdenCompraRepository.ActualizarOrdenCompra(ordenCompraActualizarRequestDto, UsuarioId!);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -136,7 +151,7 @@ namespace APIGestionInventario.Controllers
                 return Ok(responseGenericAPI);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
@@ -150,7 +165,7 @@ namespace APIGestionInventario.Controllers
             {
                 string? UsuarioId = _IJWTServices.ObtenerClaimJWT(Request, "nameid");
 
-                OrdenCompra ordenCompra = await _IOrdenCompraRepository.CrearOrdenCompra(ordenCompraCrearDto, UsuarioId);
+                OrdenCompra ordenCompra = await _IOrdenCompraRepository.CrearOrdenCompra(ordenCompraCrearDto, UsuarioId!);
 
                 ResponseGenericAPI<OrdenCompra> responseGenericAPI = new()
                 {
@@ -163,7 +178,7 @@ namespace APIGestionInventario.Controllers
                 return StatusCode((int)HttpStatusCode.Created, responseGenericAPI);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }

@@ -27,7 +27,7 @@ namespace APIGestionInventario.BAL.JWT
                     new(ClaimTypes.NameIdentifier, usuario.UsuarioId),
                     new(ClaimTypes.Role, usuario.Roles.RolNombre),
                 ]),
-                Expires = DateTime.UtcNow.AddHours(12),
+                Expires = DateTime.UtcNow.AddMinutes(int.Parse(_IConfiguration["Jwt:TimeExpiration"].ToString())),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _IConfiguration["Jwt:Issuer"],
                 Audience = _IConfiguration["Jwt:Audience"]
@@ -35,7 +35,6 @@ namespace APIGestionInventario.BAL.JWT
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
-
         }
 
         public string? ObtenerClaimJWT(HttpRequest httpRequest, string claimNombre)
@@ -46,7 +45,6 @@ namespace APIGestionInventario.BAL.JWT
             var tokenS = jsonToken as JwtSecurityToken;
 
             return tokenS?.Claims.First(claim => claim.Type == claimNombre).Value;
-
         }
     }
 }

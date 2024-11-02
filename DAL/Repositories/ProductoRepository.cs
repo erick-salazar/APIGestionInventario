@@ -19,6 +19,7 @@ namespace APIGestionInventario.DAL.Repositories
         {
 
             List<Producto> productos = await _GestionInventarioContext.Productos
+                .AsNoTracking()
                 .OrderBy(b => b.ProductoId)                
                 .ToListAsync();
 
@@ -61,7 +62,6 @@ namespace APIGestionInventario.DAL.Repositories
                 TotalRegistro = productos.Count
             };
         }
-
-        
+                
     }
 }

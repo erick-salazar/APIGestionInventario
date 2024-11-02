@@ -1,9 +1,7 @@
 ﻿
 using APIGestionInventario.Interfaces;
 using APIGestionInventario.Models;
-using Azure.Core;
 using Microsoft.EntityFrameworkCore;
-using static Azure.Core.HttpHeader;
 
 namespace APIGestionInventario.DAL.Repositories
 {
@@ -20,6 +18,7 @@ namespace APIGestionInventario.DAL.Repositories
         public async Task<Usuario?> Login(string usuarioId, string password)
         {
             return await _GestionInventarioContext.Usuarios
+                .AsNoTracking()
                 .Include(x => x.Roles)
                 .Where(
                     x => x.UsuarioId == usuarioId
@@ -32,6 +31,7 @@ namespace APIGestionInventario.DAL.Repositories
         public async Task<Usuario?> RefreshToken(string usuarioId)
         {
             return await _GestionInventarioContext.Usuarios
+                .AsNoTracking()
                 .Include(x => x.Roles)
                 .Where(
                     x => x.UsuarioId == usuarioId 

@@ -1,21 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using APIGestionInventario.Models;
 using APIGestionInventario.DTOs.Request;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using System.Security.Claims;
 using APIGestionInventario.DTOs.Response;
 using APIGestionInventario.Middleware;
-using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
-using Azure.Core;
 using APIGestionInventario.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
+using APIGestionInventario.DAL.Repositories;
 
 namespace APIGestionInventario.Controllers
 {
@@ -26,16 +18,21 @@ namespace APIGestionInventario.Controllers
         private readonly IUsuarioRepository _IUsuarioRepository;
         private readonly IJWTServices _IJWTServices;
         private readonly IGeneralServices _IGeneralServices;
+        private readonly IMemoryCache _IMemoryCache;
+        private readonly MemoryCacheEntryOptions _MemoryCacheEntryOptions;
 
         public AuthController(
             IUsuarioRepository usuarioRepository,
             IJWTServices jWTServices,
-            IGeneralServices generalServices
+            IGeneralServices generalServices,
+            IMemoryCache memoryCache
         )
         {
             _IUsuarioRepository = usuarioRepository;
             _IJWTServices = jWTServices;
             _IGeneralServices = generalServices;
+            _IMemoryCache = memoryCache;
+            _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
 
@@ -48,7 +45,7 @@ namespace APIGestionInventario.Controllers
                 Usuario? usuario = await _IUsuarioRepository.Login(request.UsuarioId, request.Password);
 
                 if (usuario != null)
-                { 
+                {
                     var token = _IJWTServices.CrearTokenJWT(usuario);
                     return Ok(new LoginResponseDto
                     {
@@ -63,9 +60,9 @@ namespace APIGestionInventario.Controllers
                 throw new CustomError((int)HttpStatusCode.Unauthorized, "0005", "Usuario o contraseña incorrecta", null);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
-            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);          
+            throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
         [HttpGet]
@@ -77,21 +74,28 @@ namespace APIGestionInventario.Controllers
 
             if (!string.IsNullOrEmpty(nameid))
             {
-                Usuario? usuario = await _IUsuarioRepository.RefreshToken(nameid);
 
-                if (usuario != null)
-                {   
-                    var token = _IJWTServices.CrearTokenJWT(usuario);
+                var cacheKey = $"RefreshToken/{nameid}";
 
-                    return Ok(new LoginResponseDto
-                    {
-                        UsuarioId = usuario.UsuarioId,
-                        UsuarioNombre = usuario.UsuarioNombre,
-                        UsuarioApellido = usuario.UsuarioApellido,
-                        RolId = usuario.RolId,
-                        Token = token
-                    });
+                if (!_IMemoryCache.TryGetValue(cacheKey, out Usuario? usuario))
+                {
+                    usuario = await _IUsuarioRepository.RefreshToken(nameid);
+                    _IMemoryCache.Set(cacheKey, usuario, _MemoryCacheEntryOptions);
                 }
+
+                usuario = usuario ?? throw new CustomError((int)HttpStatusCode.Unauthorized, "0005", "Token expirado", null);
+
+                var token = _IJWTServices.CrearTokenJWT(usuario);
+
+                return Ok(new LoginResponseDto
+                {
+                    UsuarioId = usuario.UsuarioId,
+                    UsuarioNombre = usuario.UsuarioNombre,
+                    UsuarioApellido = usuario.UsuarioApellido,
+                    RolId = usuario.RolId,
+                    Token = token
+                });
+
             }
 
             throw new CustomError((int)HttpStatusCode.Unauthorized, "0005", "Token expirado", null);

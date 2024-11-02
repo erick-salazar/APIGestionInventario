@@ -23,8 +23,9 @@ namespace APIGestionInventario.DAL.Repositories
         {
 
             List<OrdenReposicion> ordenReposicion = await _GestionInventarioContext.OrdenesReposiciones
+                .AsNoTracking()
                 .Where(
-                    x => x.OrdenReposiconEstadoId==1
+                    x => x.OrdenReposiconEstadoId == 1
                 )
                 .OrderBy(b => b.ProductoId)
                 .ToListAsync();
@@ -62,48 +63,29 @@ namespace APIGestionInventario.DAL.Repositories
                         CreadoPor = usuarioId
                     };
                     await this.AddAsync(ordenReposicion);
+                    return ordenReposicion;
                 }
-                else {
 
-                    ordenReposicion.ProductoCantidad = productoCantidad;
-                    ordenReposicion.ActualizadoPor = usuarioId;
-                    ordenReposicion.FechaActulizado = DateTime.Now;
+                ordenReposicion.ProductoCantidad = productoCantidad;
+                ordenReposicion.ActualizadoPor = usuarioId;
+                ordenReposicion.FechaActulizado = DateTime.Now;
 
-                    this.Update(ordenReposicion);
-                }
+                this.Update(ordenReposicion);
+                return ordenReposicion;
             }
-            else
-            {
-                if (ordenReposicion != null)
-                {
-                    ordenReposicion.OrdenReposiconEstadoId = 3;
-                    ordenReposicion.ActualizadoPor = usuarioId;
-                    ordenReposicion.FechaActulizado = DateTime.Now;
 
-                    this.Update(ordenReposicion);
-                }
+            if (ordenReposicion != null)
+            {
+                ordenReposicion.OrdenReposiconEstadoId = 3;
+                ordenReposicion.ActualizadoPor = usuarioId;
+                ordenReposicion.FechaActulizado = DateTime.Now;
+
+                this.Update(ordenReposicion);
+                return ordenReposicion;
             }
 
             return ordenReposicion;
         }
 
-        public async Task<OrdenReposicion> ActualizarOrdenReposionAutomatica(Producto producto, string usuarioId)
-        {
-            OrdenReposicion ordenReposicion = new();
-            if (producto.ProductoCantidad <= producto.ProductoCantidadMinima)
-            {
-                ordenReposicion = new()
-                {
-                    ProductoId = producto.ProductoId,
-                    ProveedorId = producto.ProductoId,
-                    ProductoCantidad = (producto.ProductoCantidadMinima * 2),
-                    CreadoPor = usuarioId
-                };
-
-                await this.AddAsync(ordenReposicion);
-            }
-
-            return ordenReposicion;
-        }
     }
 }

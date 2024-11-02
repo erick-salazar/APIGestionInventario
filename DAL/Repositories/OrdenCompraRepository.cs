@@ -29,10 +29,11 @@ namespace APIGestionInventario.DAL.Repositories
         public async Task<GetAllResult<OrdenCompra>> ObtenerOrdenesCompra(GetAllParameter getURLParametros)
         {
             List<OrdenCompra> ordenCompra = await _GestionInventarioContext.OrdenesCompras
+                .AsNoTracking()
                 .OrderBy(b => b.OrdenCompraId)
                 .ToListAsync();
 
-            List<OrdenCompra> ordenCompraLimiteSalto = ordenCompra
+            List<OrdenCompra> ordenCompraLimiteSalto = ordenCompra                
                 .Skip(
                     getURLParametros.Salto ?? 0
                 )
@@ -86,6 +87,7 @@ namespace APIGestionInventario.DAL.Repositories
         public async Task<OrdenCompra?> GetByOrdenProductoIdAsync(int ordenCompraId, int productoId)
         {
             return await _GestionInventarioContext.OrdenesCompras
+                .AsNoTracking()
                 .Where(
                     x => x.OrdenCompraId == ordenCompraId
                     && x.ProductoId == productoId

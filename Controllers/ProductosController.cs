@@ -9,6 +9,7 @@ using System.Diagnostics;
 using APIGestionInventario.DTOs.Request;
 using APIGestionInventario.Middleware;
 using System.Net;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace APIGestionInventario.Controllers
 {
@@ -20,16 +21,21 @@ namespace APIGestionInventario.Controllers
         private readonly IProductoRepository _IProductoRepository;
         private readonly IJWTServices _IJWTServices;
         private readonly IGeneralServices _IGeneralServices;
+        private readonly IMemoryCache _IMemoryCache;
+        private readonly MemoryCacheEntryOptions _MemoryCacheEntryOptions;
 
         public ProductosController(
             IProductoRepository productoRepository,
             IJWTServices jWTServices,
-            IGeneralServices generalServices
+            IGeneralServices generalServices,
+            IMemoryCache memoryCache
         )
         {
             _IProductoRepository = productoRepository;
             _IJWTServices = jWTServices;
             _IGeneralServices = generalServices;
+            _IMemoryCache = memoryCache;
+            _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
         // GET: api/Productos
@@ -39,7 +45,15 @@ namespace APIGestionInventario.Controllers
         {
             if (ModelState.IsValid)
             {
-                GetAllResult<Producto> productos = await _IProductoRepository.ObtenerProductos(getURLParametros);
+                string limite = getURLParametros.Limite != null ? getURLParametros.Limite.Value.ToString() : "";
+                string salto = getURLParametros.Salto != null ? getURLParametros.Salto.Value.ToString() : "";
+                var cacheKey = $"GetReport?limite={limite}&salto={salto}";
+
+                if (!_IMemoryCache.TryGetValue(cacheKey, out GetAllResult<Producto>? productos))
+                {
+                    productos = await _IProductoRepository.ObtenerProductos(getURLParametros);
+                    _IMemoryCache.Set(cacheKey, productos, _MemoryCacheEntryOptions);
+                }
 
                 ResponseGenericAPI<GetAllResult<Producto>> responseGenericAPI = new()
                 {
@@ -52,7 +66,7 @@ namespace APIGestionInventario.Controllers
                 return Ok(responseGenericAPI);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
@@ -61,14 +75,16 @@ namespace APIGestionInventario.Controllers
         [HttpGet("{id}")]
         [Authorize(Roles = "Administrador,Empleado")]
         public async Task<ActionResult<Producto>> GetProducto(int id)
-        {
-            var producto = await _IProductoRepository.GetByIdAsync(id);
+        {            
+            var cacheKey = $"GetProducto/{id}";
 
-            if (producto == null)
+            if (!_IMemoryCache.TryGetValue(cacheKey, out Producto? producto))
             {
-                throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
+                producto = await _IProductoRepository.GetByIdAsync(id);
+                _IMemoryCache.Set(cacheKey, producto, _MemoryCacheEntryOptions);
             }
 
+            producto = producto ?? throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
             ResponseGenericAPI<Producto> responseGenericAPI = new()
             {
                 Code = "0000",
@@ -150,7 +166,7 @@ namespace APIGestionInventario.Controllers
                 return Ok(responseGenericAPI);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
@@ -174,12 +190,11 @@ namespace APIGestionInventario.Controllers
                     ProductoCantidadMinima = productoCrearRequestDto.ProductoCantidadMinima,
                     ProveedorId = productoCrearRequestDto.ProveedoId,
                     Estado = productoCrearRequestDto.Estado ?? true,
-                    CreadoPor = UsuarioId
+                    CreadoPor = UsuarioId!
                 };
 
                 await _IProductoRepository.AddAsync(producto);
                 await _IProductoRepository.SaveChangesAsync();
-
 
                 ResponseGenericAPI<Producto> responseGenericAPI = new()
                 {
@@ -192,7 +207,7 @@ namespace APIGestionInventario.Controllers
                 return StatusCode((int)HttpStatusCode.Created, responseGenericAPI);
             }
 
-            var errors = _IGeneralServices.ModeDetalleErrores(ModelState);
+            var errors = _IGeneralServices.ModelDetalleErrores(ModelState);
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
@@ -202,12 +217,7 @@ namespace APIGestionInventario.Controllers
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteProducto(int id)
         {
-            var producto = await _IProductoRepository.GetByIdAsync(id);
-            if (producto == null)
-            {
-                throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
-            }
-
+            var producto = await _IProductoRepository.GetByIdAsync(id) ?? throw new CustomError((int)HttpStatusCode.NotFound, "0006", "Datos no encontrados", null);
             _IProductoRepository.Delete(producto);
             await _IProductoRepository.SaveChangesAsync();
 

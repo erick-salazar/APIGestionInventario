@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 
 namespace APIGestionInventario.Models
@@ -15,9 +15,11 @@ namespace APIGestionInventario.Models
         public string CreadoPor { get; set; } = null!;
         public DateTime? FechaActulizado { get; set; }
         public string? ActualizadoPor { get; set; }
+
+        [JsonIgnore]
         public virtual Producto Productos { get; set; } = null!;
 
         [JsonIgnore]
-        public virtual ICollection<OrdenReposicion> OrdenesReposiciones { get; set; } = [];
+        public virtual ICollection<OrdenReposicion> OrdenesReposiciones { get; set; } = new List<OrdenReposicion>();
     }
 }

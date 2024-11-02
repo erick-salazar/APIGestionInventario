@@ -15,6 +15,7 @@ namespace APIGestionInventario.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Administrador")]
+    [Produces("application/json")]
     public class ReportesController : ControllerBase
     {
         private readonly IProductoRepository _IProductoRepository;
@@ -37,6 +38,17 @@ namespace APIGestionInventario.Controllers
             _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
+        /// <summary>
+        /// Generacion de reportes
+        /// </summary>
+        /// <response code="200">Reporte generado (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpGet("{reporte}")]
         public async Task<ActionResult> GetReport(string reporte, [FromQuery] GetAllParameter getURLParametros)
         {
@@ -68,7 +80,7 @@ namespace APIGestionInventario.Controllers
 
                         return Ok(responseProductos);
 
-                    case "ordenesReposicion":
+                    case "ordenesreposicion":
                         if (!_IMemoryCache.TryGetValue(cacheKey, out GetAllResult<OrdenReposicion>? ordenReposicion))
                         {
                             ordenReposicion = await _IOrdenReposicionRepository.ObtenerOrdenReposicion(getURLParametros);
@@ -107,6 +119,5 @@ namespace APIGestionInventario.Controllers
 
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
-
     }
 }

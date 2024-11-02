@@ -9,25 +9,23 @@ namespace APIGestionInventario.Middleware
     {
         public string? Code { get; set; }
         public int StatusCode { get; set; }
-        public List<ErrorDetail>? ErrorDetails {get;set;}
+        public List<ErrorDetail>? ErrorDetails { get; set; }
 
         public CustomError(int statusCode, string? code, string message, List<ErrorDetail>? errorDetails) : base(message)
         {
             StatusCode = statusCode;
             Code = code;
-            ErrorDetails = errorDetails;            
+            ErrorDetails = errorDetails;
         }
     }
 
     public class CustomErrorHandlingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IServiceProvider _IServiceProvider;
 
-        public CustomErrorHandlingMiddleware(RequestDelegate next, IServiceProvider serviceProvider)
+        public CustomErrorHandlingMiddleware(RequestDelegate next)
         {
             _next = next;
-            _IServiceProvider = serviceProvider;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -74,20 +72,19 @@ namespace APIGestionInventario.Middleware
                     case 400:
                         code = "0002";
                         errorMessage = errorMessage.Length == 0 ? "Parametros de solicitud no validos" : errorMessage;
-                        break;                    
+                        break;
                 }
             }
 
             var response = new ResponseGenericAPI<object>
             {
                 Status = context.Response.StatusCode,
-                Code = code, 
+                Code = code!,
                 Message = errorMessage,
                 Data = null,
-                Error = errorDetails != null ? errorDetails :
-            [
-                new() { Field = "General", Message = exception.Message }
-            ],
+                Error = errorDetails ?? ([
+                    new() { Field = "General", Message = exception.Message }
+                ]),
                 TraceId = Activity.Current?.Id ?? context.TraceIdentifier
             };
 

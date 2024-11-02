@@ -23,7 +23,7 @@ namespace APIGestionInventario.DTOs.Request
         public int ProductoCantidadMinima { get; set; }
 
         [Required]
-        public int ProveedoId { get; set; }
+        public int ProveedorId { get; set; }
         public bool? Estado { get; set; } = true;
     }
 }

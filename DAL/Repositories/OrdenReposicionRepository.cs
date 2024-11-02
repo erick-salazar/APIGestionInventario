@@ -60,7 +60,8 @@ namespace APIGestionInventario.DAL.Repositories
                         ProductoId = producto.ProductoId,
                         ProveedorId = producto.ProductoId,
                         ProductoCantidad = productoCantidad,
-                        CreadoPor = usuarioId
+                        CreadoPor = usuarioId,
+                        OrdenCompraId = ordenCompraId
                     };
                     await this.AddAsync(ordenReposicion);
                     return ordenReposicion;

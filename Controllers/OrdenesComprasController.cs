@@ -16,6 +16,7 @@ namespace APIGestionInventario.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Administrador,Empleado")]
+    [Produces("application/json")]
     public class OrdenesComprasController : ControllerBase
     {
         private readonly IOrdenCompraRepository _IOrdenCompraRepository;
@@ -38,15 +39,25 @@ namespace APIGestionInventario.Controllers
             _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
-        // GET: api/OrdenesCompras
+        /// <summary>
+        /// Listado de ordenes de compras
+        /// </summary>
+        /// <response code="200">Listado de ordenes de compras</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="500">Error de servidor</response>
         [HttpGet]
+        [ProducesResponseType(typeof(ResponseGenericAPI<GetAllResult<OrdenCompra>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<GetAllResult<object>>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<GetAllResult<object>>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<OrdenCompra>>> GetOrdenesCompras([FromQuery] GetAllParameter getURLParametros)
         {
             if (ModelState.IsValid)
             {
                 string limite = getURLParametros.Limite != null ? getURLParametros.Limite.Value.ToString() : "";
                 string salto = getURLParametros.Salto != null ? getURLParametros.Salto.Value.ToString() : "";
-                var cacheKey = $"GetReport?limite={limite}&salto={salto}";
+                var cacheKey = $"GetOrdenesCompras?limite={limite}&salto={salto}";
 
                 if (!_IMemoryCache.TryGetValue(cacheKey, out GetAllResult<OrdenCompra>? ordenesCompra))
                 {
@@ -70,7 +81,19 @@ namespace APIGestionInventario.Controllers
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
-        // GET: api/OrdenesCompras/5
+        /// <summary>
+        /// Informacion orden de compra
+        /// </summary>
+        /// <response code="200">Informacion orden de compra (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="404">Orden no encotrada</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<OrdenCompra>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpGet("{id}")]
         public async Task<ActionResult<OrdenCompra>> GetOrdenesCompra(int id)
         {
@@ -94,8 +117,19 @@ namespace APIGestionInventario.Controllers
             return Ok(responseGenericAPI);
         }
 
-        // PUT: api/OrdenesCompras/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Actualizar orden de compra
+        /// </summary>
+        /// <response code="200">orden de compra actualizada (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="404">Orden no encotrada</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<OrdenCompra>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutOrdenesCompra(int id, OrdenCompraActualizarRequestDto ordenCompraActualizarRequestDto)
         {
@@ -156,8 +190,17 @@ namespace APIGestionInventario.Controllers
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
-        // POST: api/OrdenesCompras
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Crear orden de compra
+        /// </summary>
+        /// <response code="201">orden de compra creada (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<OrdenCompra>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpPost]
         public async Task<ActionResult<OrdenCompra>> PostOrdenesCompra(OrdenCompraCrearRequestDto ordenCompraCrearDto)
         {

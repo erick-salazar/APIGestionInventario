@@ -33,7 +33,7 @@ namespace APIGestionInventario.DAL.Repositories
                 .OrderBy(b => b.OrdenCompraId)
                 .ToListAsync();
 
-            List<OrdenCompra> ordenCompraLimiteSalto = ordenCompra                
+            List<OrdenCompra> ordenCompraLimiteSalto = ordenCompra
                 .Skip(
                     getURLParametros.Salto ?? 0
                 )
@@ -50,9 +50,13 @@ namespace APIGestionInventario.DAL.Repositories
 
         public async Task<OrdenCompra> CrearOrdenCompra(OrdenCompraCrearRequestDto ordenCompraCrearRequestDto, string usuarioId)
         {
-            await _GestionInventarioContext.Database.BeginTransactionAsync();
+            Producto? producto = await _IProductoRepository.GetByIdAsync(ordenCompraCrearRequestDto.ProductoId) ?? throw new CustomError((int)HttpStatusCode.NotFound, "0006", ($"Producto con ID {ordenCompraCrearRequestDto.ProductoId} no encontrado."), null);
 
-            Producto? producto = await _IProductoRepository.GetByIdAsync(ordenCompraCrearRequestDto.ProductoId) ?? throw new CustomError((int)HttpStatusCode.NotFound,"0006", ($"Producto con ID {ordenCompraCrearRequestDto.ProductoId} no encontrado."), null);
+            if (producto.ProductoCantidad < ordenCompraCrearRequestDto.ProductoCantidad)
+            {
+                throw new CustomError((int)HttpStatusCode.BadRequest, "0008", ($"Producto: {producto.ProductoNombre} con inventario menor a la orden de compra: {ordenCompraCrearRequestDto.ProductoCantidad}."), null);
+            }
+
             OrdenCompra ordenCompra = new()
             {
                 ProductoId = ordenCompraCrearRequestDto.ProductoId,
@@ -60,14 +64,16 @@ namespace APIGestionInventario.DAL.Repositories
                 ProductoPrecio = producto.ProductoPrecio,
                 CreadoPor = usuarioId
             };
+
+            await _GestionInventarioContext.Database.BeginTransactionAsync();
             try
             {
                 producto.ProductoCantidad -= ordenCompraCrearRequestDto.ProductoCantidad;
-                
+
                 _IProductoRepository.Update(producto);
-                
                 await _GestionInventarioContext.AddAsync(ordenCompra);
 
+                await _GestionInventarioContext.SaveChangesAsync();
                 await _IOrdenReposicionRepository.CrearOrdenReposionAutomatica(producto, ordenCompra.OrdenCompraId, usuarioId);
 
                 await _GestionInventarioContext.SaveChangesAsync();
@@ -101,17 +107,17 @@ namespace APIGestionInventario.DAL.Repositories
 
             OrdenCompra? ordenCompra = await this.GetByIdAsync(ordenCompraActualizarRequestDto.OrdenCompraId);
             Producto? producto = await _IProductoRepository.GetByIdAsync(ordenCompraActualizarRequestDto.ProductoId) ?? throw new CustomError((int)HttpStatusCode.NotFound, "0006", ($"Producto con ID {ordenCompraActualizarRequestDto.ProductoId} no encontrado."), null);
-            
+
             try
             {
-                producto.ProductoCantidad = ordenCompra.ProductoCantidad - ordenCompraActualizarRequestDto.ProductoCantidad;
+                producto.ProductoCantidad = ordenCompra!.ProductoCantidad - ordenCompraActualizarRequestDto.ProductoCantidad;
 
                 ordenCompra.ProductoCantidad = ordenCompraActualizarRequestDto.ProductoCantidad;
                 ordenCompra.ActualizadoPor = usuarioId;
                 ordenCompra.FechaActulizado = DateTime.Now;
 
                 _IProductoRepository.Update(producto);
-               
+
                 this.Update(ordenCompra);
                 await _IOrdenReposicionRepository.CrearOrdenReposionAutomatica(producto, ordenCompra.OrdenCompraId, usuarioId);
                 await _GestionInventarioContext.SaveChangesAsync();

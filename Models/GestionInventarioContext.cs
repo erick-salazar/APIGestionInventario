@@ -86,5 +86,6 @@ namespace APIGestionInventario.Models
         public virtual DbSet<Rol> Roles { get; set; }
         public virtual DbSet<Proveedor> Proveedores { get; set; }
         public virtual DbSet<OrdenReposicion> OrdenesReposiciones { get; set; }
+        public virtual DbSet<OrdenReposionEstado> OrdenReposionEstados { get; set; }
     }
 }

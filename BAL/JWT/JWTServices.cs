@@ -19,7 +19,7 @@ namespace APIGestionInventario.BAL.JWT
         public string CrearTokenJWT(Usuario usuario)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_IConfiguration["Jwt:Key"]);
+            var key = Encoding.ASCII.GetBytes(_IConfiguration["Jwt:Key"]!);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(
@@ -27,7 +27,7 @@ namespace APIGestionInventario.BAL.JWT
                     new(ClaimTypes.NameIdentifier, usuario.UsuarioId),
                     new(ClaimTypes.Role, usuario.Roles.RolNombre),
                 ]),
-                Expires = DateTime.UtcNow.AddMinutes(int.Parse(_IConfiguration["Jwt:TimeExpiration"].ToString())),
+                Expires = DateTime.UtcNow.AddMinutes(int.Parse(_IConfiguration["Jwt:TimeExpiration"]!.ToString())),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _IConfiguration["Jwt:Issuer"],
                 Audience = _IConfiguration["Jwt:Audience"]

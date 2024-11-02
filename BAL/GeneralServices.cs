@@ -17,11 +17,11 @@ namespace APIGestionInventario.BAL
         public List<ErrorDetail>? ModelDetalleErrores(ModelStateDictionary keyValuePairs)
         {
             return keyValuePairs.Keys
-            .Where(key => keyValuePairs?[key].Errors.Count > 0)
+            .Where(key => keyValuePairs?[key]!.Errors.Count > 0)
             .Select(key => new ErrorDetail
             {
                 Field = key,
-                Message = string.Join(", ", keyValuePairs[key].Errors.Select(e => e.ErrorMessage))
+                Message = string.Join(", ", keyValuePairs[key]!.Errors.Select(e => e.ErrorMessage))
             }).ToList();
         }
 
@@ -29,8 +29,8 @@ namespace APIGestionInventario.BAL
         {
             return new()
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(int.Parse(_IConfiguration["MemoryCacheEntryOptions:AbsoluteExpirationRelativeToNow"].ToString())), 
-                SlidingExpiration = TimeSpan.FromMinutes(int.Parse(_IConfiguration["MemoryCacheEntryOptions:SlidingExpiration"].ToString())) 
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(int.Parse(_IConfiguration["MemoryCacheEntryOptions:AbsoluteExpirationRelativeToNow"]!.ToString())), 
+                SlidingExpiration = TimeSpan.FromMinutes(int.Parse(_IConfiguration["MemoryCacheEntryOptions:SlidingExpiration"]!.ToString())) 
             };
         }
 

@@ -15,6 +15,7 @@ namespace APIGestionInventario.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Produces("application/json")]
     public class ProductosController : ControllerBase
     {
 
@@ -38,16 +39,26 @@ namespace APIGestionInventario.Controllers
             _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
-        // GET: api/Productos
+        /// <summary>
+        /// Listado de productos
+        /// </summary>
+        /// <response code="200">Lista de productos (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="500">Error de servidor</response>
         [HttpGet]
         [Authorize(Roles = "Administrador,Empleado")]
+        [ProducesResponseType(typeof(ResponseGenericAPI<GetAllResult<Producto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetProductos([FromQuery] GetAllParameter getURLParametros)
         {
             if (ModelState.IsValid)
             {
                 string limite = getURLParametros.Limite != null ? getURLParametros.Limite.Value.ToString() : "";
                 string salto = getURLParametros.Salto != null ? getURLParametros.Salto.Value.ToString() : "";
-                var cacheKey = $"GetReport?limite={limite}&salto={salto}";
+                var cacheKey = $"GetProductos?limite={limite}&salto={salto}";
 
                 if (!_IMemoryCache.TryGetValue(cacheKey, out GetAllResult<Producto>? productos))
                 {
@@ -71,9 +82,22 @@ namespace APIGestionInventario.Controllers
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
-        // GET: api/Productos/5
+
+        /// <summary>
+        /// Informacion de producto
+        /// </summary>
+        /// <response code="200">Informacion de producto (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="404">Producto no encotrado</response>
+        /// <response code="500">Error de servidor</response>
         [HttpGet("{id}")]
         [Authorize(Roles = "Administrador,Empleado")]
+        [ProducesResponseType(typeof(ResponseGenericAPI<Producto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Producto>> GetProducto(int id)
         {            
             var cacheKey = $"GetProducto/{id}";
@@ -96,8 +120,19 @@ namespace APIGestionInventario.Controllers
             return Ok(responseGenericAPI);
         }
 
-        // PUT: api/Productos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Actualizar producto
+        /// </summary>
+        /// <response code="200">Producto actualizado (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="404">Producto no encotrado</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<Producto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> PutProducto(int id, ProductoActualizarRequestDto productoActualizarRequestDto)
@@ -171,8 +206,20 @@ namespace APIGestionInventario.Controllers
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
-        // POST: api/Productos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+
+        /// <summary>
+        /// Crear producto
+        /// </summary>
+        /// <response code="201">Producto agregado (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="404">Producto no encotrado</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<Producto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpPost]
         [Authorize(Roles = "Administrador")]
         public async Task<ActionResult<Producto>> PostProducto(ProductoCrearRequestDto productoCrearRequestDto)
@@ -188,7 +235,7 @@ namespace APIGestionInventario.Controllers
                     ProductoPrecio = productoCrearRequestDto.ProductoPrecio,
                     ProductoCantidad = productoCrearRequestDto.ProductoCantidad,
                     ProductoCantidadMinima = productoCrearRequestDto.ProductoCantidadMinima,
-                    ProveedorId = productoCrearRequestDto.ProveedoId,
+                    ProveedorId = productoCrearRequestDto.ProveedorId,
                     Estado = productoCrearRequestDto.Estado ?? true,
                     CreadoPor = UsuarioId!
                 };
@@ -212,7 +259,17 @@ namespace APIGestionInventario.Controllers
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
-        // DELETE: api/Productos/5
+        /// <summary>
+        /// Eliminar producto
+        /// </summary>
+        /// <response code="200">Producto eliminado (success)</response>
+        /// <response code="401">Usuario no autorizado</response>
+        /// <response code="404">Producto no encotrado</response>
+        /// <response code="500">Error de servidor</response>
+        [ProducesResponseType(typeof(ResponseGenericAPI<OrdenCompra>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteProducto(int id)

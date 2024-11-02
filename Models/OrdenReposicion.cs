@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
 
 namespace APIGestionInventario.Models
 {
@@ -17,9 +18,16 @@ namespace APIGestionInventario.Models
         public string? ActualizadoPor { get; set; }
         public DateTime? FechaRealizado { get; set; }
 
+        [JsonIgnore]
         public virtual Proveedor Proveedores { get; set; } = null!;
+
+        [JsonIgnore]
         public virtual Producto Productos { get; set; } = null!;
+
+        [JsonIgnore]
         public virtual OrdenCompra OrdenesCompras { get; set; } = null!;
+
+        [JsonIgnore]
         public virtual OrdenReposionEstado OrdenReposiconEstados { get; set; } = null!;
 
     }

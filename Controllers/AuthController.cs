@@ -8,11 +8,13 @@ using Microsoft.AspNetCore.Authorization;
 using APIGestionInventario.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using APIGestionInventario.DAL.Repositories;
+using APIGestionInventario.DTOs.Custom;
 
 namespace APIGestionInventario.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Produces("application/json")]
     public class AuthController : ControllerBase
     {
         private readonly IUsuarioRepository _IUsuarioRepository;
@@ -35,9 +37,19 @@ namespace APIGestionInventario.Controllers
             _MemoryCacheEntryOptions = _IGeneralServices.ObtenerMemoryCacheOptions();
         }
 
-
+        /// <summary>
+        /// Login API
+        /// </summary>
+        /// <response code="200">Login correcto (success)</response>
+        /// <response code="400">Error en parametros de solicitud</response>
+        /// <response code="401">Usuario o contraseña incorrecta</response>
+        /// <response code="500">Error de servidor</response>
         [HttpPost]
         [Route("Login")]
+        [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
             if (ModelState.IsValid)
@@ -65,16 +77,24 @@ namespace APIGestionInventario.Controllers
             throw new CustomError((int)HttpStatusCode.BadRequest, null, "", errors);
         }
 
+        /// <summary>
+        /// Refresh token
+        /// </summary>
+        /// <response code="200">Refresh token correcto (success)</response>
+        /// <response code="401">Token expirado</response>
+        /// <response code="500">Error de servidor</response>
         [HttpGet]
         [Route("RefreshToken")]
         [Authorize(Roles = "Administrador,Empleado")]
+        [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<object>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ResponseGenericAPI<GetAllResult<object>>), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RefreshToken()
         {
             string? nameid = _IJWTServices.ObtenerClaimJWT(Request, "nameid");
 
             if (!string.IsNullOrEmpty(nameid))
             {
-
                 var cacheKey = $"RefreshToken/{nameid}";
 
                 if (!_IMemoryCache.TryGetValue(cacheKey, out Usuario? usuario))

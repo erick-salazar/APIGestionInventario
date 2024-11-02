@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace APIGestionInventario.Models
 {
@@ -20,11 +21,12 @@ namespace APIGestionInventario.Models
         public int ProveedorId { get; set; }
 
         [JsonIgnore]
-        public virtual ICollection<OrdenCompra> OrdenesCompras { get; set; } = [];
+        public virtual ICollection<OrdenCompra> OrdenesCompras { get; set; } = null!;
 
         [JsonIgnore]
-        public virtual ICollection<OrdenReposicion> OrdenesReposiciones { get; set; } = [];
+        public virtual ICollection<OrdenReposicion> OrdenesReposiciones { get; set; } = null!;
 
+        [JsonIgnore]
         public virtual Proveedor Proveedores { get; set; } = null!;
     }
 }

@@ -9,7 +9,7 @@ namespace APIGestionInventario.DAL.Repositories
     {
         private readonly GestionInventarioContext _context;
         private readonly DbSet<T> _dbSet;
-        private IDbContextTransaction _transaction;
+        private IDbContextTransaction _transaction = null!;
 
         public RepositoyGestionInventarioDB(GestionInventarioContext context)
         {
